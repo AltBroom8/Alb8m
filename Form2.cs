@@ -30,6 +30,8 @@ namespace WindowsFormsApp1
         public Form2()
         {
             InitializeComponent();
+            this.Icon = new Icon("LOGO_1.ico");
+            this.Text = "Nueva cancion";
             comboBox1.DropDownStyle = ComboBoxStyle.DropDownList;
             comboBox2.DropDownStyle = ComboBoxStyle.DropDownList;
             portadaTextbox.ReadOnly = true;

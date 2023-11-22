@@ -10,12 +10,12 @@ using NAudio.Wave;
 using System.Reflection;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Runtime.Serialization;
+using System.Drawing.Imaging;
 
 
 
 namespace WindowsFormsApp1
 {
-    [Serializable]
     public partial class altavoz : Form
     {
         HashSet<Cancion> album = new HashSet<Cancion>();
@@ -24,6 +24,8 @@ namespace WindowsFormsApp1
         {
             InitializeComponent();
             milistBox.SelectedIndexChanged += seleccion;
+            this.Text = "Alb8m";
+            this.Icon = new Icon("LOGO_1.ico");
             this.BackgroundImage = Image.FromFile(Path.Combine(Application.StartupPath,"fondo.png"));
             button1.FlatStyle = FlatStyle.Flat;
             button1.FlatAppearance.BorderSize = 0;
@@ -51,15 +53,36 @@ namespace WindowsFormsApp1
         }
         private void button1_Click(object sender, EventArgs e)
         {
-            if(milistBox.Items.Count == 0)
+            metodoGuarda();
+        }
+
+        private void metodoGuarda()
+        {
+            if (milistBox.Items.Count == 0)
             {
                 MessageBox.Show("No hay elementos para guardar", "Alerta", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
             string rutaArchivo = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "databank.data");
             FileStream archivo = new FileStream(rutaArchivo, FileMode.Create);
-            BinaryFormatter formato = new BinaryFormatter();
-            formato.Serialize(archivo, album);
+            BinaryWriter bin = new BinaryWriter(archivo);
+            foreach (Cancion temita in album)
+            {
+                bin.Write(temita.Titulo);
+                bin.Write(temita.Autor);
+                bin.Write(temita.Fecha.ToBinary());
+                bin.Write(temita.Genero);
+                bin.Write(temita.BPM);
+                bin.Write(temita.Key);
+                MemoryStream ms = new MemoryStream();
+                temita.Portada.Save(ms, ImageFormat.Png);
+                byte[] imagen = ms.ToArray();
+                bin.Write(imagen.Length);
+                bin.Write(imagen);
+                bin.Write(temita.Audio.Length);
+                bin.Write(temita.Audio);
+            }
+            bin.Close();
             archivo.Close();
         }
 
@@ -71,11 +94,7 @@ namespace WindowsFormsApp1
             {
                 File.Delete(tema);
             }
-            string rutaArchivo = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "databank.data"); 
-            FileStream archivo = new FileStream(rutaArchivo, FileMode.Append);
-            BinaryFormatter formato = new BinaryFormatter();
-            formato.Serialize(archivo, album);
-            archivo.Close();
+            metodoGuarda();
  
         }
 
@@ -147,12 +166,25 @@ namespace WindowsFormsApp1
 
         private void eliminarbutton_Click(object sender, EventArgs e)
         {
-            int index = milistBox.SelectedIndex;
-            Cancion[] aux = album.ToArray();
-            album.Remove(aux[index]);
-            milistBox.Items.RemoveAt(index);
-            milistBox.ClearSelected();
-            seleccion(milistBox, EventArgs.Empty);
+            if (milistBox.Items.Count == 0)
+            {
+                MessageBox.Show("No hay elementos para eliminar", "Alerta", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }else if(milistBox.SelectedIndex == -1)
+            {
+                MessageBox.Show("Debes elegir un elemento para eliminarlo", "Alerta", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            else
+            {
+                int index = milistBox.SelectedIndex;
+                Cancion[] aux = album.ToArray();
+                album.Remove(aux[index]);
+                milistBox.Items.RemoveAt(index);
+                milistBox.ClearSelected();
+                seleccion(milistBox, EventArgs.Empty);
+            }
+            
 
         }
 
@@ -213,10 +245,6 @@ namespace WindowsFormsApp1
                 procesoReproductor.EnableRaisingEvents = true;
                 procesoReproductor.Start();
                 
-                
-
-                
-                
             }
             catch (Exception ex)
             {
@@ -227,15 +255,35 @@ namespace WindowsFormsApp1
         private void cargarButton_Click(object sender, EventArgs e)
         {
             string rutaArchivo = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "databank.data");
-            FileStream archivo = new FileStream(rutaArchivo, FileMode.Open);
-            BinaryFormatter formato = new BinaryFormatter();
-            HashSet<Cancion> datos = (HashSet<Cancion>)formato.Deserialize(archivo);
-            foreach (Cancion tema in datos)
-            {
-                album.Add(tema);
-                milistBox.Items.Add(tema.Titulo + " | " + tema.Autor);
+            if (File.Exists(rutaArchivo)) { 
+                FileStream archivo = new FileStream(rutaArchivo, FileMode.Open);
+                BinaryReader br = new BinaryReader(archivo);
+                while(br.BaseStream.Position < br.BaseStream.Length)
+                {
+                    Cancion cancion = new Cancion();
+                    cancion.Titulo = br.ReadString();
+                    cancion.Autor = br.ReadString();
+                    cancion.Fecha = DateTime.FromBinary(br.ReadInt64());
+                    cancion.Genero = br.ReadString();
+                    cancion.BPM = br.ReadInt32();
+                    cancion.Key = br.ReadString();
+                    int imagenLength = br.ReadInt32();
+                    byte[] imagenBytes = br.ReadBytes(imagenLength);
+                    MemoryStream ms = new MemoryStream(imagenBytes);
+                    cancion.Portada = Image.FromStream(ms);
+                    int audioLength = br.ReadInt32();
+                    cancion.Audio = br.ReadBytes(audioLength);
+                    album.Add(cancion);
+                    milistBox.Items.Add(cancion.Titulo + " | " + cancion.Autor); ;
+
+                }
+                br.Close();
+                archivo.Close();
             }
-            archivo.Close();
+            else
+            {
+                MessageBox.Show("No hay ningun archivo para cargar", "Alerta", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
         }
     }
 }
