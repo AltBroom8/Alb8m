@@ -14,7 +14,9 @@ namespace WindowsFormsApp1
     public partial class Form2 : Form
         
     {
+        //Cancion que recibe el otro form
         private Cancion actual = new Cancion();
+        //Booleano para saber si se cierra bien el programa
         private Boolean exito = false;
         public Cancion Actual
         {
@@ -32,26 +34,25 @@ namespace WindowsFormsApp1
             InitializeComponent();
             this.Icon = new Icon("LOGO_1.ico");
             this.Text = "Nueva cancion";
+            // Configura dos ComboBox para permitir solo selecciones de la lista desplegable
             comboBox1.DropDownStyle = ComboBoxStyle.DropDownList;
             comboBox2.DropDownStyle = ComboBoxStyle.DropDownList;
+            //No se puede escribir en los textbox de la portada y el audio.
             portadaTextbox.ReadOnly = true;
             portadaTextbox.Enabled = false;
             audiotextBox.ReadOnly = true;
             audiotextBox.Enabled = false;
+            //Ajusta donde se coloca el cursor
             maskedTextBox1.MouseClick += maskedTextBox1_MouseClick;
             this.FormClosing += Form1_FormClosing;
 
-
-
         }
 
-        private void label2_Click(object sender, EventArgs e)
-        {
-
-        }
-
+        
+        //Boton para adjuntar ruta de imagen
         private void buscarButton_Click(object sender, EventArgs e)
         {
+            //Archivos permitidos
             OpenFileDialog openFileDialog = new OpenFileDialog();
             openFileDialog.Filter = "Archivos de imagen|*.jpg;*.jpeg;*.png;*.gif;*.bmp|Todos los archivos|*.*";
 
@@ -61,7 +62,7 @@ namespace WindowsFormsApp1
                 portadaTextbox.Text = openFileDialog.FileName;
             }
         }
-
+        //Boton para adjuntar ruta de audio
         private void audiobutton_Click(object sender, EventArgs e)
         {
             OpenFileDialog openFileDialog = new OpenFileDialog();
@@ -73,9 +74,10 @@ namespace WindowsFormsApp1
                 audiotextBox.Text = openFileDialog.FileName;
             }
         }
+        //Cierre de programa
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
-
+            //Si fuerzas el cierre hay un aviso
             if (exito == false)
             {
                 DialogResult result = MessageBox.Show("¿Estás seguro de que quieres salir? No se guardaran los datos.", "Salir", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
@@ -86,6 +88,7 @@ namespace WindowsFormsApp1
                 }
             }
         }
+        //Encuetra el primer espacio libre para escribir y situa el cursor ahi
         private void maskedTextBox1_MouseClick(object sender, MouseEventArgs e)
         {
             int index = FindFirstEmptySpace(maskedTextBox1.Text);
@@ -103,7 +106,7 @@ namespace WindowsFormsApp1
             }
             return text.Length; // Si no se encuentra un espacio vacío, devuelve la longitud total del texto.
         }
-
+        //Checkeo de que los campos se rellenan correctamente.
         private void aceptarbutton_Click(object sender, EventArgs e)
         {
             if (string.IsNullOrEmpty(tituloTextbox.Text))
@@ -125,6 +128,7 @@ namespace WindowsFormsApp1
             }else if (string.IsNullOrEmpty(audiotextBox.Text)){
                 MessageBox.Show("Elige tu cancion, espero que sea el Mambo de KIKO RIVERA", "Alerta", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
+            //Si todo esta correcto, incluye los datos en la instancia, y levanta la bandera.
             else
             {
                 actual.Titulo = tituloTextbox.Text;
